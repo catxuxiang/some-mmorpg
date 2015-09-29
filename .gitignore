@@ -37,4 +37,4 @@ client/anonymous
 # CLion files
 .DS_Store
 .idea
-CMakeList.txt
+CMakeLists.txt
