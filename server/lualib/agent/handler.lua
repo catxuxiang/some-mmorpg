@@ -1,6 +1,7 @@
 local handler = {}
 local mt = { __index = handler }
 
+-- 一个简单的handler类继承写法
 function handler.new (request, response, cmd)
 	return setmetatable ({
 		init_func = {},
@@ -21,6 +22,7 @@ local function merge (dest, t)
 	end
 end
 
+-- 把REQUEST/RESPONSE/CMD的方法复制user中
 function handler:register (user)
 	for _, f in pairs (self.init_func) do
 		f (user)

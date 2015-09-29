@@ -1,3 +1,6 @@
+-- 这是个四叉树的类
+-- 四叉树用于空间索引比较方便，请自行百度了解
+
 local quadtree = {}
 local mt = { __index = quadtree }
 
@@ -33,8 +36,8 @@ end
 
 function quadtree:subdevide (last)
 	local left, top, right, bottom = self.left, self.top, self.right, self.bottom
-	local centerx = (left + right) // 2
-	local centery = (top + bottom) // 2
+	local centerx = (left + right) / 2
+	local centery = (top + bottom) / 2
 
 	self.children = {
 		quadtree.new (left, top, centerx, centery),

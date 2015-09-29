@@ -33,3 +33,8 @@
 # other files
 var/
 client/anonymous
+
+# CLion files
+.DS_Store
+.idea
+CMakeList.txt

@@ -15,12 +15,14 @@ function CMD.kick (character)
 	end
 end
 
+-- 客户端请求character_pick时，agent会调用world的character_enter()
 function CMD.character_enter (agent, character)
 	if online_character[character] ~= nil then
 		syslog.notice (string.format ("multiple login detected, character %d", character))
 		CMD.kick (character)
 	end
 
+	-- 再通知agent world_enter
 	online_character[character] = agent
 	syslog.notice (string.format ("character(%d) enter world", character))
 	local map, pos = skynet.call (agent, "lua", "world_enter", skynet.self ())
@@ -41,6 +43,7 @@ end
 
 skynet.start (function ()
 	local self = skynet.self ()
+	-- 创建多个map服务
 	for _, conf in pairs (mapdata) do
 		local name = conf.name
 		local s = skynet.newservice ("map", self)

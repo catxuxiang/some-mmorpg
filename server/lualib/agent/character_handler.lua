@@ -118,6 +118,7 @@ attribute_string = {
 	"stamina",
 }
 
+-- 和handler.lua中的function handler:init(f)重名，意思是覆盖了原来的方法
 function handler.init (character)
 	local temp_attribute = {
 		[1] = {},

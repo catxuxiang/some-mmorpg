@@ -109,6 +109,7 @@ local function handle_request (name, args, response)
 
 	if name:sub (1, 3) == "aoi" and  name ~= "aoi_remove" then
 		if response then
+			-- 回应消息，而且wantmore = true
 			send_message (fd, response (rr))
 		end
 	end

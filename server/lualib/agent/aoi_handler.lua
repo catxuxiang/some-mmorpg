@@ -9,8 +9,8 @@ local RESPONSE = {}
 local CMD = {}
 handler = handler.new (nil, RESPONSE, CMD)
 
-local subscribe_character
-local subscribe_agent
+local subscribe_character  -- 存放的是 { character = c, agent = agent, flag = flag }
+local subscribe_agent	   -- 存放的同 subscribe_agent
 local user
 local character_writer
 local self_id
@@ -30,6 +30,9 @@ handler:init (function (u)
 	self_flag = {}
 	for k, _ in pairs (scope2proto) do
 		self_flag[k] = { dirty = false, wantmore = true }
+		-- dirty字段表示数据是否脏了，脏了就需要推送给客户端
+		-- wantmore为false时，表示已经向客户端推送了，客户端的响应还没回来，响应回来后会把wantmore置为true
+		--    wantmore这个字段是为了保证单个agent的推送是串行的，不会有多个并行的推送
 	end
 end)
 
@@ -59,6 +62,8 @@ local function mark_flag (character, scope, field, value)
 	t[field] = value
 end
 
+-- 创建一个sharemap的reader
+-- 这里存放的时user.charcter，看来是用于数据的临时交换
 local function create_reader ()
 	syslog.debug ("aoi_handler create_reader")
 	if not character_writer then
@@ -67,6 +72,7 @@ local function create_reader ()
 	return character_writer:copy ()
 end
 
+-- 把agent加入到self的关注列表中，具体就是subscribe_character和subscribe_agent
 local function subscribe (agent, reader)
 	syslog.debugf ("aoi_handler aoi_subscribe agent(%d) reader(%s)", agent, reader)
 	local c = sharemap.reader ("character", reader)
@@ -83,7 +89,8 @@ local function subscribe (agent, reader)
 	}
 	subscribe_character[c.id] = t
 	subscribe_agent[agent] = t
-		
+
+	-- 通知客户端
 	user.send_request ("aoi_add", { character = c })
 end
 
@@ -109,6 +116,7 @@ local function refresh_aoi (id, scope)
 end
 
 local function aoi_update_response (id, scope)
+	-- @@ 难道还有id != self_id的情况？
 	if id == self_id then
 		self_flag[scope].wantmore = true
 		send_self (scope)
@@ -124,6 +132,7 @@ local function aoi_add (list)
 
 	local self = skynet.self ()
 	for _, target in pairs (list) do
+		-- skynet.fork一般用在for里的skynet.call
 		skynet.fork (function ()
 			local reader = skynet.call (target, "lua", "aoi_subscribe", self, create_reader ())
 			subscribe (target, reader)
@@ -166,6 +175,7 @@ end
 function CMD.aoi_subscribe (agent, reader)
 	syslog.debugf ("aoi_subscribe agent(%d) reader(%s)", agent, reader)
 	subscribe (agent, reader)
+	-- 又创建一个reader返回给调用者
 	return create_reader ()
 end
 
@@ -180,6 +190,7 @@ function CMD.aoi_unsubscribe (agent)
 	end
 end
 
+-- 用户移动时，会call到map服务里去维护aoi，然后map服务会调用户的aoi_manage来更新
 function CMD.aoi_manage (alist, rlist, ulist, scope)
 	if (alist or ulist) and character_writer then
 		character_writer:commit ()
