@@ -15,7 +15,8 @@ local nclient = 0
 -- @@这个用法还不太明白
 local CMD = setmetatable ({}, { __gc = function () netpack.clear (queue) end })
 
--- @@注册了PTYPE_CLIENT协议，但没指明dispatch处理函数？
+-- 在下面的dispatch_msg中用到了PTYPE_CLIENT协议，必须先注册才能用
+-- 又因为dispatch_msg里只是用了skynet.redirect来转发，转发时不需pack函数
 skynet.register_protocol {
 	name = "client",
 	id = skynet.PTYPE_CLIENT,
@@ -116,6 +117,14 @@ function gateserver.start (handler)
 		if agent then
 			-- 如果有agent了就直接转给agent去处理
 			skynet.redirect (agent, 0, "client", 0, msg, sz)
+
+			-- 如何在lua协议里转发，参考这个例子
+			-- skynet.start(function()
+			-- 	skynet.dispatch("lua", function(session, source, command, ...)
+			-- 		local s = worker[math.random(1, #worker)]
+			-- 		skynet.redirect(s, source, "lua", session, skynet.pack(command, ...))
+			-- 	end)
+			-- end)
 		else
 			-- 否则就给gameserver去处理
 			handler.message (fd, msg, sz)
